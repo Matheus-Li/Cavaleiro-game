@@ -109,7 +109,7 @@ def slime_animation():
         slime.image = slime_run_images_flip[int(slime.frame)]
 
 clock.schedule_interval(slime_animation, 0.1)
-
+ 
 def slime_movement():
     slime.x = slime.x + slime.vx
     if slime.left < 0 or slime.right > WIDTH:
