@@ -17,7 +17,7 @@ solid_tiles = []
 
 slime_image = 'enemies/slime_run_0'
 slime = Actor(slime_image)
-slime.pos = 20, 500
+slime.pos = 945, 529
 slime.anchor = ('center', 'bottom')
 slime.frame = 0
 slime.vx = 2
@@ -111,9 +111,18 @@ def slime_animation():
 clock.schedule_interval(slime_animation, 0.1)
  
 def slime_movement():
-    slime.x = slime.x + slime.vx
+    # Update horizontal position
+    slime.x += slime.vx
+    
+    # Check screen boundaries
     if slime.left < 0 or slime.right > WIDTH:
-        slime.vx = - slime.vx
+        slime.vx = -slime.vx
+        
+    # Check tile collisions
+    for tile in solid_tiles:
+        if slime.colliderect(tile):
+            slime.vx = -slime.vx
+            break  # Only handle first collision
 
 def update_game():
     # --- Movimento Horizontal (Eixo X) ---
@@ -218,6 +227,7 @@ def update_game():
     #print(knight.state)
     #print(knight.on_ground)
     #print(knight.on_ground)
+    print(knight.pos)
 
 def draw_colliders():
         # Desenha um contorno vermelho em volta de cada tile sólido
@@ -227,7 +237,7 @@ def draw_colliders():
 def draw_menu():
     screen.clear()
     screen.fill((0, 0, 0))  # Optional background
-    screen.draw.text("My Game", center=(WIDTH / 2, HEIGHT / 4), fontsize=60, color="white")
+    screen.draw.text("Cavaleiro", center=(WIDTH / 2, HEIGHT / 4), fontsize=60, color="white")
     
     # Draw Play option
     play_color = "yellow" if selected_option == 0 else "white"
