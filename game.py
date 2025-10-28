@@ -15,6 +15,9 @@ keyboard.up_previous = False
 keyboard.down_previous = False
 solid_tiles = []
 slimes = []
+# Sound/menu music control
+sound_on = True
+menu_music_playing = False
   # Posição inicial do slime
 
 knight_image = 'player/animation_idle_0'
@@ -221,6 +224,8 @@ def update_game():
     # --- Lógica do Pulo ---
     if keyboard.space and knight.on_ground:
         knight.vy = JUMP_STRENGTH
+        if sound_on:  # Só toca o som se o som estiver ligado
+            sounds.jump.play()
 
     global current_frame
     
@@ -270,7 +275,7 @@ def update_game():
     #print(knight.state)
     #print(knight.on_ground)
     #print(knight.on_ground)
-    print(knight.pos)
+    #print(knight.pos)
 
 def draw_colliders():
         # Desenha um contorno vermelho em volta de cada tile sólido
@@ -284,11 +289,15 @@ def draw_menu():
     
     # Draw Play option
     play_color = "yellow" if selected_option == 0 else "white"
-    screen.draw.text("Play", center=(WIDTH / 2, HEIGHT / 2), fontsize=40, color=play_color)
-    
+    screen.draw.text("Jogar", center=(WIDTH / 2, HEIGHT / 2), fontsize=40, color=play_color)
+
     # Draw Quit option
     quit_color = "yellow" if selected_option == 1 else "white"
-    screen.draw.text("Quit", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
+    screen.draw.text("Sair", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
+
+    som_color = "yellow" if selected_option == 2 else "white"
+    som_text = "Som: On" if sound_on else "Som: Off"
+    screen.draw.text(som_text, center=(WIDTH / 2, HEIGHT / 2 + 100), fontsize=40, color=som_color)
 
 def draw_game(): 
     screen.fill((3, 38, 89))
@@ -318,18 +327,14 @@ def draw_victory():
     # Draw Quit option
     quit_color = "yellow" if selected_option == 1 else "white"
     screen.draw.text("Sair", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
-    #screen.draw.filled_rect(menu_rect, "gray")
-    #screen.draw.filled_rect(quit_rect, "gray")
-   # screen.draw.text("Menu", center=menu_rect.center, fontsize=36, color="white")
-    #screen.draw.text("Sair", center=quit_rect.center, fontsize=36, color="white")
 
 def update_victory():
     global STATE, selected_option   
 
     if (keyboard.up or keyboard.w) and not keyboard.up_previous:
-        selected_option = (selected_option - 1) % 2
+        selected_option = (selected_option - 1) % 3
     if (keyboard.down or keyboard.s) and not keyboard.down_previous:
-        selected_option = (selected_option + 1) % 2
+        selected_option = (selected_option + 1) % 3
 
     if keyboard.RETURN:
         if selected_option == 0:  # Menu
@@ -351,15 +356,25 @@ def update_menu():
     global STATE, selected_option
 
     if (keyboard.up or keyboard.w) and not keyboard.up_previous:
-        selected_option = (selected_option - 1) % 2
+        selected_option = (selected_option - 1) % 3
     if (keyboard.down or keyboard.s) and not keyboard.down_previous:
-        selected_option = (selected_option + 1) % 2
+        selected_option = (selected_option + 1) % 3
 
     if keyboard.RETURN:
         if selected_option == 0:  # Play
             STATE = "PLAYING"
-        elif selected_option == 1:  # Quit
+        elif selected_option == 1:  # Quit        
             exit()
+        if selected_option == 2:
+            # Toggle sound on/off
+            global sound_on
+            sound_on = not sound_on
+            if sound_on:
+                # Play menu music immediately when turning sound back on
+                music.play('time_for_adventure')
+            else:
+                music.stop()
+                sounds.jump.stop()
 
     if keyboard.escape:  # Escape still works to quit
         exit()
@@ -369,11 +384,22 @@ def update_menu():
     keyboard.down_previous = keyboard.down
 
 def draw():
+    global menu_music_playing
     if STATE == "MENU":
+        # Manage menu music without restarting it every frame
+        if sound_on and not menu_music_playing:
+            music.play('time_for_adventure')
+            menu_music_playing = True
+        if not sound_on and menu_music_playing:
+            music.stop()
+            menu_music_playing = False
         draw_menu()
     elif STATE == "PLAYING":
         draw_game()
     elif STATE == "VICTORY":
+        if menu_music_playing:
+            music.stop()
+            menu_music_playing = False
         draw_victory()
 
 def update():
