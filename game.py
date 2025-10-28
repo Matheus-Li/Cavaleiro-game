@@ -28,6 +28,10 @@ knight.speed = 4
 knight.is_facing_right = True
 current_frame = 0
 
+coin = Actor('tiles/coin_0')
+coin.pos = 30, 220
+coin.frame = 0
+
 def load_csv(filename):
     with open(filename) as f:
         lines = f.readlines()
@@ -94,6 +98,14 @@ knight_fall_images = ['player/animation_fall_0']  # Single frame
 knight_fall_images_flip = ['player/animation_fall_flip_0'] 
 slime_run_images = [f'enemies/slime_run_{i}' for i in range(10)]
 slime_run_images_flip = [f'enemies/slime_run_flip_{i}' for i in range(10)]
+coin_images = [f'tiles/coin_{i}' for i in range(7)]
+
+def coin_animation():
+    current_frame = (coin.frame + 1) % len(coin_images)
+    coin.image = coin_images[int(current_frame)]
+    coin.frame = current_frame
+
+clock.schedule_interval(coin_animation, 0.1)
 
 def create_slime(x, y):
     # use the first frame as the initial image (Actor expects a string, not a list)
@@ -139,6 +151,7 @@ def slime_movement():
                 break  # só trata a primeira colisão relevante
 
 def update_game():
+    global STATE
     # --- Movimento Horizontal (Eixo X) ---
     
     # 1. Define a velocidade horizontal com base no input
@@ -200,6 +213,11 @@ def update_game():
                 knight.top = tile.bottom # ...alinhamos seu topo com a base do tile (bateu a cabeça)
                 knight.vy = 0 # Para a velocidade de subida
 
+    if knight.bottom > HEIGHT:
+        knight.pos = (10, 500)
+        STATE = "MENU"
+
+
     # --- Lógica do Pulo ---
     if keyboard.space and knight.on_ground:
         knight.vy = JUMP_STRENGTH
@@ -232,8 +250,19 @@ def update_game():
     if knight.right > WIDTH:
         knight.right = WIDTH
 
-
     slime_movement()
+
+    # Checa colisão do jogador com a moeda -> tela de vitória
+    if coin and knight.colliderect(coin):
+        # remove a moeda da cena (opcional) e vai para tela de vitória
+        coin.pos = (-1000, -1000)
+        STATE = "VICTORY"
+        return
+
+    for s in slimes:
+        if knight.colliderect(s):
+            knight.pos = (10, 500)
+            STATE = "MENU"  
 
     pass
 
@@ -241,7 +270,7 @@ def update_game():
     #print(knight.state)
     #print(knight.on_ground)
     #print(knight.on_ground)
-    #print(knight.pos)
+    print(knight.pos)
 
 def draw_colliders():
         # Desenha um contorno vermelho em volta de cada tile sólido
@@ -267,10 +296,56 @@ def draw_game():
     draw_map1_platform(map1_platform, TILE_SIZE)
     draw_map1_details(map1_details, TILE_SIZE)
     knight.draw()
+    coin.draw()
     for s in slimes:
         s.draw()
     #draw_colliders()
     pass
+
+def draw_victory():
+    # Simple victory screen with two buttons: Menu and Quit
+    screen.clear()
+    screen.fill((0, 0, 0))
+    screen.draw.text("Sucesso!", center=(WIDTH / 2, HEIGHT / 4), fontsize=72, color="white")
+
+    menu_rect = Rect((WIDTH / 2 - 100, HEIGHT / 2), (200, 50))
+    quit_rect = Rect((WIDTH / 2 - 100, HEIGHT / 2 + 80), (200, 50))
+
+    # Draw buttons
+    play_color = "yellow" if selected_option == 0 else "white"
+    screen.draw.text("Menu", center=(WIDTH / 2, HEIGHT / 2), fontsize=40, color=play_color)
+    
+    # Draw Quit option
+    quit_color = "yellow" if selected_option == 1 else "white"
+    screen.draw.text("Sair", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
+    #screen.draw.filled_rect(menu_rect, "gray")
+    #screen.draw.filled_rect(quit_rect, "gray")
+   # screen.draw.text("Menu", center=menu_rect.center, fontsize=36, color="white")
+    #screen.draw.text("Sair", center=quit_rect.center, fontsize=36, color="white")
+
+def update_victory():
+    global STATE, selected_option   
+
+    if (keyboard.up or keyboard.w) and not keyboard.up_previous:
+        selected_option = (selected_option - 1) % 2
+    if (keyboard.down or keyboard.s) and not keyboard.down_previous:
+        selected_option = (selected_option + 1) % 2
+
+    if keyboard.RETURN:
+        if selected_option == 0:  # Menu
+            STATE = "MENU"
+            knight.pos = (10, 500)
+            coin.pos = (30, 220)
+        elif selected_option == 1:  # Sair
+            exit()
+
+    # Keyboard shortcuts
+    if keyboard.escape:
+        exit()
+        
+    # Update previous key states
+    keyboard.up_previous = keyboard.up
+    keyboard.down_previous = keyboard.down
 
 def update_menu():
     global STATE, selected_option
@@ -298,12 +373,16 @@ def draw():
         draw_menu()
     elif STATE == "PLAYING":
         draw_game()
+    elif STATE == "VICTORY":
+        draw_victory()
 
 def update():
     if STATE == "MENU":
         update_menu()
     elif STATE == "PLAYING":
         update_game()
+    elif STATE == "VICTORY":
+        update_victory()
 
 
 pgzrun.go()
