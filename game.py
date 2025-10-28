@@ -14,14 +14,8 @@ selected_option = 0  # 0 = Play, 1 = Quit
 keyboard.up_previous = False
 keyboard.down_previous = False
 solid_tiles = []
-
-slime_image = 'enemies/slime_run_0'
-slime = Actor(slime_image)
-slime.pos = 945, 529
-slime.anchor = ('center', 'bottom')
-slime.frame = 0
-slime.vx = 2
-slime.startleft = slime.left  # Posição inicial do slime
+slimes = []
+  # Posição inicial do slime
 
 knight_image = 'player/animation_idle_0'
 knight = Actor(knight_image)
@@ -101,28 +95,48 @@ knight_fall_images_flip = ['player/animation_fall_flip_0']
 slime_run_images = [f'enemies/slime_run_{i}' for i in range(10)]
 slime_run_images_flip = [f'enemies/slime_run_flip_{i}' for i in range(10)]
 
+def create_slime(x, y):
+    # use the first frame as the initial image (Actor expects a string, not a list)
+    new_slime = Actor(slime_run_images[0])
+    new_slime.pos = x, y
+    new_slime.anchor = ('center', 'bottom')
+    new_slime.frame = 0
+    new_slime.vx = 2
+    return new_slime
+
+def spawn_slimes():
+    slimes.append(create_slime(933, 529))
+    slimes.append(create_slime(40, 241))
+
+# spawn initial slimes once
+spawn_slimes()
+
 def slime_animation():
-    slime.frame = (slime.frame + 1) % len(slime_run_images)  # Usa a lista de imagens, não a imagem atual
-    if slime.vx > 0:
-        slime.image = slime_run_images[int(slime.frame)]
-    else:
-        slime.image = slime_run_images_flip[int(slime.frame)]
+    for s in slimes:
+        s.frame = (s.frame + 1) % len(slime_run_images)  # Usa a lista de imagens, não a imagem atual
+        if s.vx > 0:
+            s.image = slime_run_images[int(s.frame)]
+        else:
+            s.image = slime_run_images_flip[int(s.frame)]
 
 clock.schedule_interval(slime_animation, 0.1)
  
 def slime_movement():
-    # Update horizontal position
-    slime.x += slime.vx
-    
-    # Check screen boundaries
-    if slime.left < 0 or slime.right > WIDTH:
-        slime.vx = -slime.vx
-        
-    # Check tile collisions
-    for tile in solid_tiles:
-        if slime.colliderect(tile):
-            slime.vx = -slime.vx
-            break  # Only handle first collision
+    for s in slimes:
+        # Atualiza posição horizontal para este slime
+        s.x += s.vx
+
+        # Verifica limites da tela para ESTE slime
+        if s.left < 0 or s.right > WIDTH:
+            s.vx = -s.vx
+            s.x += s.vx  # empurra um passo para fora da borda para evitar "grudar"
+
+        # Verifica colisões com tiles para ESTE slime
+        for tile in solid_tiles:
+            if s.colliderect(tile):
+                s.vx = -s.vx
+                s.x += s.vx  # empurra para fora do tile
+                break  # só trata a primeira colisão relevante
 
 def update_game():
     # --- Movimento Horizontal (Eixo X) ---
@@ -227,7 +241,7 @@ def update_game():
     #print(knight.state)
     #print(knight.on_ground)
     #print(knight.on_ground)
-    print(knight.pos)
+    #print(knight.pos)
 
 def draw_colliders():
         # Desenha um contorno vermelho em volta de cada tile sólido
@@ -253,7 +267,8 @@ def draw_game():
     draw_map1_platform(map1_platform, TILE_SIZE)
     draw_map1_details(map1_details, TILE_SIZE)
     knight.draw()
-    slime.draw()
+    for s in slimes:
+        s.draw()
     #draw_colliders()
     pass
 
