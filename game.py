@@ -3,22 +3,21 @@ import math
 import random
 from pygame import Rect
 
-WIDTH = 960  # Era 480
-HEIGHT = 640 # Era 320
+WIDTH = 960
+HEIGHT = 640
 TITLE = "Cavaleiro"
-GRAVITY = 1 # Era 0.6
-JUMP_STRENGTH = -16 # Era -16
-TILE_SIZE = 32 # Era 16
+GRAVITY = 1
+JUMP_STRENGTH = -16
+TILE_SIZE = 32
 STATE = "MENU"
-selected_option = 0  # 0 = Play, 1 = Quit
+
+selected_option = 0
 keyboard.up_previous = False
 keyboard.down_previous = False
 solid_tiles = []
-slimes = []
-# Sound/menu music control
 sound_on = True
 menu_music_playing = False
-  # Posição inicial do slime
+slimes = []
 
 knight_image = 'player/animation_idle_0'
 knight = Actor(knight_image)
@@ -63,17 +62,17 @@ solid_tiles.extend(create_tile_rects(map1_platform))
 def draw_map1_details(map, tile_size=16):
     for y, line in enumerate(map):
         for x, number in enumerate(line):
-            if number == 212:  # Números 0
+            if number == 212:
                 screen.blit('tiles/water1', (x * tile_size, y * tile_size))
-            elif number == 228:  # Números 16
+            elif number == 228:
                 screen.blit('tiles/water2', (x * tile_size, y * tile_size))
 
 def draw_map1_ground(map, tile_size=16):
     for y, line in enumerate(map):
         for x, number in enumerate(line):
-            if number == 0:  # Números 0
+            if number == 0:
                 screen.blit('tiles/ground1', (x * tile_size, y * tile_size))
-            elif number == 16:  # Números 16
+            elif number == 16:
                 screen.blit('tiles/ground2', (x * tile_size, y * tile_size))
 
 def draw_map1_platform(map, tile_size=16):
@@ -83,22 +82,22 @@ def draw_map1_platform(map, tile_size=16):
                 screen.blit('tiles/platform1', (x * tile_size, y * tile_size))
             elif number == 2:
                 screen.blit('tiles/platform2', (x * tile_size, y * tile_size))
-            elif number == 3:  # Adicionar platform3
+            elif number == 3:
                 screen.blit('tiles/platform3', (x * tile_size, y * tile_size))
-            elif number == 0:  # Usar platform1 para números 0
+            elif number == 0:
                 screen.blit('tiles/platform1', (x * tile_size, y * tile_size))
-            elif number in [198, 216]:  # Usar platform3 para números especiais
+            elif number in [198, 216]:
                 screen.blit('tiles/platform3', (x * tile_size, y * tile_size))
 
-# Animation frames lists using exact file names that exist
+# Animation frames
 knight_idle_images = [f'player/animation_idle_{i}' for i in range(4)]
 knight_idle_images_flip = [f'player/animation_idle_flip_{i}' for i in range(4)]
 knight_run_images = [f'player/animation_run_{i}' for i in range(16)]
 knight_run_images_flip = [f'player/animation_run_flip_{i}' for i in range(16)]
-knight_jump_images = ['player/animation_jump_0']  # Single frame
-knight_jump_images_flip = ['player/animation_jump_flip_0']  # Single frame
-knight_fall_images = ['player/animation_fall_0']  # Single frame
-knight_fall_images_flip = ['player/animation_fall_flip_0'] 
+knight_jump_images = ['player/animation_jump_0']
+knight_jump_images_flip = ['player/animation_jump_flip_0']
+knight_fall_images = ['player/animation_fall_0']
+knight_fall_images_flip = ['player/animation_fall_flip_0']
 slime_run_images = [f'enemies/slime_run_{i}' for i in range(10)]
 slime_run_images_flip = [f'enemies/slime_run_flip_{i}' for i in range(10)]
 coin_images = [f'tiles/coin_{i}' for i in range(7)]
@@ -111,7 +110,6 @@ def coin_animation():
 clock.schedule_interval(coin_animation, 0.1)
 
 def create_slime(x, y):
-    # use the first frame as the initial image (Actor expects a string, not a list)
     new_slime = Actor(slime_run_images[0])
     new_slime.pos = x, y
     new_slime.anchor = ('center', 'bottom')
@@ -123,12 +121,11 @@ def spawn_slimes():
     slimes.append(create_slime(933, 529))
     slimes.append(create_slime(40, 241))
 
-# spawn initial slimes once
 spawn_slimes()
 
 def slime_animation():
     for s in slimes:
-        s.frame = (s.frame + 1) % len(slime_run_images)  # Usa a lista de imagens, não a imagem atual
+        s.frame = (s.frame + 1) % len(slime_run_images)  # Uses the image list, not the current image
         if s.vx > 0:
             s.image = slime_run_images[int(s.frame)]
         else:
@@ -138,31 +135,29 @@ clock.schedule_interval(slime_animation, 0.1)
  
 def slime_movement():
     for s in slimes:
-        # Atualiza posição horizontal para este slime
         s.x += s.vx
 
-        # Verifica limites da tela para ESTE slime
+        # Screen boundaries
         if s.left < 0 or s.right > WIDTH:
             s.vx = -s.vx
-            s.x += s.vx  # empurra um passo para fora da borda para evitar "grudar"
+            s.x += s.vx
 
-        # Verifica colisões com tiles para ESTE slime
+        # Tile collisions
         for tile in solid_tiles:
             if s.colliderect(tile):
                 s.vx = -s.vx
-                s.x += s.vx  # empurra para fora do tile
-                break  # só trata a primeira colisão relevante
+                s.x += s.vx
+                break
 
 def update_game():
     global STATE
-    # --- Movimento Horizontal (Eixo X) ---
     
-    # 1. Define a velocidade horizontal com base no input
+    # Horizontal movement
     knight.vx = 0
     direction = 0
-    if keyboard.left or keyboard.a: # Era -3
+    if keyboard.left or keyboard.a:
         direction = -1
-    if keyboard.right or keyboard.d:  # Era 3
+    if keyboard.right or keyboard.d:
         direction = 1
 
     knight.vx = direction * knight.speed
@@ -175,9 +170,9 @@ def update_game():
     for tile in solid_tiles:
         if knight.colliderect(tile):
             if knight.vx > 0:
-                knight.right = tile.left # ...alinhamos sua direita com a esquerda do tile
+                knight.right = tile.left # Align right side with tile's left side
                 knight.vx = 0
-            elif knight.vx < 0:  # Para a velocidade de queda
+            elif knight.vx < 0:
                 knight.left = tile.right
                 knight.vx = 0
 
@@ -192,44 +187,38 @@ def update_game():
 
     knight.image = 'player/animation_' + knight.state + ('_flip_' if not knight.is_facing_right else '_') + '0'
 
-    # --- Movimento Vertical (Eixo Y) ---
-
-    # 4. Aplica a gravidade
-    knight.vy += GRAVITY # Ajusta a gravidade para ser independente do frame rate
-    
-    # 5. Move o personagem no eixo Y
+    # Vertical movement and gravity
+    knight.vy += GRAVITY
     knight.y += knight.vy
-
-    # 6. Checa colisões APENAS no eixo Y
-    knight.on_ground = False # Assume que está no ar até provar o contrário
+    knight.on_ground = False
     
     for tile in solid_tiles:
        if knight.colliderect(tile):
-            # Se estava caindo (vy > 0) e colidiu...
+            # If falling (vy > 0) and collided:
             if knight.vy > 0:
-                knight.bottom = tile.top # ...alinhamos sua base com o topo do tile
-                knight.on_ground = True # Marca que está no chão
-                knight.vy = 0 # Para a velocidade de queda
-            
-            # Se estava subindo (pulando) e colidiu...
+                knight.bottom = tile.top # Align bottom with top side
+                knight.on_ground = True
+                knight.vy = 0
+
+            # If jumping (vy < 0) and collided:
             elif knight.vy < 0:
-                knight.top = tile.bottom # ...alinhamos seu topo com a base do tile (bateu a cabeça)
-                knight.vy = 0 # Para a velocidade de subida
+                knight.top = tile.bottom # Align top with bottom side
+                knight.vy = 0 
 
     if knight.bottom > HEIGHT:
         knight.pos = (10, 500)
         STATE = "MENU"
 
 
-    # --- Lógica do Pulo ---
+    # Jump
     if keyboard.space and knight.on_ground:
         knight.vy = JUMP_STRENGTH
-        if sound_on:  # Só toca o som se o som estiver ligado
+        if sound_on:
             sounds.jump.play()
 
     global current_frame
     
-    # 1. Seleciona a lista de animação correta baseada no estado
+    # Player animation
     animation_lists = {
         'idle': (knight_idle_images, knight_idle_images_flip),
         'run': (knight_run_images, knight_run_images_flip),
@@ -237,17 +226,14 @@ def update_game():
         'fall': (knight_fall_images, knight_fall_images_flip)
     }
 
-    # 2. Pega a lista correta baseada na direção
     current_animation = animation_lists[knight.state]
     if knight.is_facing_right:
-        frames = current_animation[0]  # lista normal
+        frames = current_animation[0]  # Normal animation list
     else:
-        frames = current_animation[1]  # lista flip
+        frames = current_animation[1]  # Flip animation list
 
-    # 3. Atualiza o frame atual (velocidade da animação = 0.2)
+    # Update the current frame (animation speed = 0.2)
     current_frame = (current_frame + 0.2) % len(frames)
-    
-    # 4. Aplica o frame atual à imagem do knight
     knight.image = frames[int(current_frame)]
 
     if knight.left < 0:
@@ -257,9 +243,8 @@ def update_game():
 
     slime_movement()
 
-    # Checa colisão do jogador com a moeda -> tela de vitória
+    
     if coin and knight.colliderect(coin):
-        # remove a moeda da cena (opcional) e vai para tela de vitória
         coin.pos = (-1000, -1000)
         STATE = "VICTORY"
         return
@@ -271,32 +256,19 @@ def update_game():
 
     pass
 
-    #print(direction)
-    #print(knight.state)
-    #print(knight.on_ground)
-    #print(knight.on_ground)
-    #print(knight.pos)
-
-def draw_colliders():
-        # Desenha um contorno vermelho em volta de cada tile sólido
-    for tile in solid_tiles:
-        screen.draw.rect(tile, 'red')
-
 def draw_menu():
     screen.clear()
-    screen.fill((0, 0, 0))  # Optional background
+    screen.fill((0, 0, 0))
     screen.draw.text("Cavaleiro", center=(WIDTH / 2, HEIGHT / 4), fontsize=60, color="white")
     
-    # Draw Play option
     play_color = "yellow" if selected_option == 0 else "white"
     screen.draw.text("Jogar", center=(WIDTH / 2, HEIGHT / 2), fontsize=40, color=play_color)
 
-    # Draw Quit option
     quit_color = "yellow" if selected_option == 1 else "white"
     screen.draw.text("Sair", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
 
     som_color = "yellow" if selected_option == 2 else "white"
-    som_text = "Som: On" if sound_on else "Som: Off"
+    som_text = "Som: Ligado" if sound_on else "Som: Desligado"
     screen.draw.text(som_text, center=(WIDTH / 2, HEIGHT / 2 + 100), fontsize=40, color=som_color)
 
 def draw_game(): 
@@ -308,11 +280,11 @@ def draw_game():
     coin.draw()
     for s in slimes:
         s.draw()
-    #draw_colliders()
+
     pass
 
 def draw_victory():
-    # Simple victory screen with two buttons: Menu and Quit
+    # Victory screen: Menu and Sair
     screen.clear()
     screen.fill((0, 0, 0))
     screen.draw.text("Sucesso!", center=(WIDTH / 2, HEIGHT / 4), fontsize=72, color="white")
@@ -320,11 +292,9 @@ def draw_victory():
     menu_rect = Rect((WIDTH / 2 - 100, HEIGHT / 2), (200, 50))
     quit_rect = Rect((WIDTH / 2 - 100, HEIGHT / 2 + 80), (200, 50))
 
-    # Draw buttons
     play_color = "yellow" if selected_option == 0 else "white"
     screen.draw.text("Menu", center=(WIDTH / 2, HEIGHT / 2), fontsize=40, color=play_color)
     
-    # Draw Quit option
     quit_color = "yellow" if selected_option == 1 else "white"
     screen.draw.text("Sair", center=(WIDTH / 2, HEIGHT / 2 + 50), fontsize=40, color=quit_color)
 
@@ -337,14 +307,13 @@ def update_victory():
         selected_option = (selected_option + 1) % 3
 
     if keyboard.RETURN:
-        if selected_option == 0:  # Menu
+        if selected_option == 0:
             STATE = "MENU"
             knight.pos = (10, 500)
             coin.pos = (30, 220)
-        elif selected_option == 1:  # Sair
+        elif selected_option == 1:
             exit()
 
-    # Keyboard shortcuts
     if keyboard.escape:
         exit()
         
@@ -361,22 +330,21 @@ def update_menu():
         selected_option = (selected_option + 1) % 3
 
     if keyboard.RETURN:
-        if selected_option == 0:  # Play
+        if selected_option == 0: # Jogar
             STATE = "PLAYING"
-        elif selected_option == 1:  # Quit        
+        elif selected_option == 1:  # Sair
             exit()
         if selected_option == 2:
             # Toggle sound on/off
             global sound_on
             sound_on = not sound_on
             if sound_on:
-                # Play menu music immediately when turning sound back on
                 music.play('time_for_adventure')
             else:
                 music.stop()
                 sounds.jump.stop()
 
-    if keyboard.escape:  # Escape still works to quit
+    if keyboard.escape:
         exit()
         
     # Update previous key states
